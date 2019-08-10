@@ -10,7 +10,7 @@ def pool(x, size=2):
 def conv(x, out_channels, kernel_size=3, stride=1, name=None):
     in_channels = x.get_shape().as_list()[1]
 
-    # define the weight variable for convolution operation.
+    # define the weight variable for convolution operation
     with tf.variable_scope(name):
         weights = tf.get_variable(
             'weights',
@@ -18,7 +18,7 @@ def conv(x, out_channels, kernel_size=3, stride=1, name=None):
             tf.float32,
             tf.initializers.he_normal())
 
-    # cast to the same dtype for convolution operation.
+    # cast to the same dtype for convolution operation
     if x.dtype != weights.dtype: weights = tf.cast(weights, x.dtype)
 
     return tf.nn.conv2d(x, weights, stride, 'SAME', data_format='NCHW')
@@ -27,10 +27,10 @@ def bn(x, is_training=True, name=None):
     original_dtype = x.dtype
     in_channels = x.get_shape().as_list()[1]
 
-    # cast to float32 dtype because tf.nn.fused_batch_norm only supports float32.
+    # cast to float32 dtype because tf.nn.fused_batch_norm only supports float32
     if x.dtype != tf.float32: x = tf.cast(x, tf.float32)
 
-    # define variables for batch-normalization.
+    # define variables for batch-normalization
     with tf.variable_scope(name):
         scale = tf.get_variable('scale', [in_channels], tf.float32, tf.initializers.ones())
         offset = tf.get_variable('offset', [in_channels], tf.float32, tf.initializers.zeros())
@@ -39,14 +39,14 @@ def bn(x, is_training=True, name=None):
         var = tf.get_variable('variance', [in_channels], tf.float32, tf.initializers.zeros())
 
     if is_training:
-        # do batch-normalization and update total mean and variance.
+        # do batch-normalization and update total mean and variance
         x, batch_mean, batch_var = tf.nn.fused_batch_norm(
             x, scale, offset, epsilon=1e-3, data_format='NCHW', is_training=True)
 
         tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, tf.assign(mean, mean * 0.99 + batch_mean * 0.01))
         tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, tf.assign(var, var * 0.99 + batch_var * 0.01))
     else:
-        # do batch-normalization with calculated total mean and variance.
+        # do batch-normalization with calculated total mean and variance
         x, _, _ = tf.nn.fused_batch_norm(
             x, scale, offset, mean, var, epsilon=1e-3, data_format='NCHW', is_training=False)
 
