@@ -4,14 +4,15 @@ import ops
 
 def bottleneck(x, out_channels, stride=1, is_training=True, name=None):
     with tf.variable_scope(name):
+        shortcut = x
         in_channels = x.get_shape().as_list()[1]
 
         x = ops.relu(ops.bn(x, is_training, name='bn_1'))
 
         # if the dimension of residual shortcut does not match to the
         # dimension of bottleneck output, do convolution to match its dimension.
-        if in_channels == out_channels and stride == 1: shortcut = x
-        else: shortcut = ops.conv(x, out_channels, 1, stride, name='conv_res')
+        if in_channels != out_channels or stride > 1:
+            shortcut = ops.conv(x, out_channels, 1, stride, name='conv_res')
 
         x = ops.conv(x, out_channels // 4, 1, name='conv_2')
         x = ops.relu(ops.bn(x, is_training, name='bn_3'))

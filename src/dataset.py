@@ -39,25 +39,18 @@ def aspect_preserving_resize_and_crop_image(image, resize_min, crop_height, crop
 
 def parse_dataset_example(serialized):
     feature_map = {
-        'image/encoded':          tf.io.FixedLenFeature([], dtype=tf.string, default_value=''),
-        'image/class/label':      tf.io.FixedLenFeature([], dtype=tf.int64, default_value=-1),
-        'image/class/text':       tf.io.FixedLenFeature([], dtype=tf.string, default_value=''),
-        'image/object/bbox/xmin': tf.io.VarLenFeature(dtype=tf.float32),
-        'image/object/bbox/ymin': tf.io.VarLenFeature(dtype=tf.float32),
-        'image/object/bbox/xmax': tf.io.VarLenFeature(dtype=tf.float32),
-        'image/object/bbox/ymax': tf.io.VarLenFeature(dtype=tf.float32)
-    }
+        'image/encoded': tf.io.FixedLenFeature([], dtype=tf.string, default_value=''),
+        'image/class/label': tf.io.FixedLenFeature([], dtype=tf.int64, default_value=-1),
+        'image/class/text': tf.io.FixedLenFeature([], dtype=tf.string, default_value='')}
+    for name in ['ymin', 'xmin', 'ymax', 'xmax']:
+        feature_map['image/object/bbox/{}'.format(name)] = tf.io.VarLenFeature(dtype=tf.float32)
+
     features = tf.io.parse_single_example(serialized, feature_map)
     label = tf.cast(features['image/class/label'], dtype=tf.int32) - 1
-
-    xmin = tf.expand_dims(features['image/object/bbox/xmin'].values, 0)
-    ymin = tf.expand_dims(features['image/object/bbox/ymin'].values, 0)
-    xmax = tf.expand_dims(features['image/object/bbox/xmax'].values, 0)
-    ymax = tf.expand_dims(features['image/object/bbox/ymax'].values, 0)
-
-    bbox = tf.concat([ymin, xmin, ymax, xmax], 0)
-    bbox = tf.expand_dims(bbox, 0)
-    bbox = tf.transpose(bbox, [0, 2, 1])
+    bbox = list(map(
+        lambda name: tf.expand_dims(features['image/object/bbox/{}'.format(name)].values, 0),
+        ['ymin', 'xmin', 'ymax', 'xmax']))
+    bbox = tf.transpose(tf.expand_dims(tf.concat(bbox, 0), 0), [0, 2, 1])
 
     return features['image/encoded'], label, bbox
 
@@ -70,47 +63,41 @@ def process_dataset_image(serialized, is_training=True):
     else:
         image = tf.image.decode_jpeg(image_buffer, channels=3)
         image = aspect_preserving_resize_and_crop_image(image, 256, 224, 224)
+
     image = tf.reshape(tf.cast(image, tf.float32), [224, 224, 3])
     image = 2 * tf.transpose(image, [2, 0, 1]) - 1
 
     return image, label
 
 def create_imagenet_train_dataset(dataset_dir, batch_size):
-    filenames = [os.path.join(dataset_dir, 'train-{:05d}-of-01024'.format(i))
+    filenames = [os.path.join(dataset_dir, 'train/train-{:05d}-of-01024'.format(i))
                  for i in range(1024)]
-    dataset = tf.data.Dataset.from_tensor_slices(filenames)
-    dataset = dataset.shuffle(1024)
-    dataset = dataset.interleave(
-        tf.data.TFRecordDataset,
-        cycle_length=10,
-        num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
-    dataset = dataset.prefetch(batch_size)
-    dataset = dataset.shuffle(10000)
-    dataset = dataset.repeat()
-    dataset = dataset.map(
-        lambda serialized: process_dataset_image(serialized, is_training=True),
-        num_parallel_calls=tf.data.experimental.AUTOTUNE)
-    dataset = dataset.batch(batch_size, drop_remainder=True)
-    dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
-
-    return dataset
+    return (tf.data.Dataset
+            .from_tensor_slices(filenames)
+            .shuffle(1024)
+            .interleave(tf.data.TFRecordDataset,
+                        cycle_length=10,
+                        num_parallel_calls=tf.data.experimental.AUTOTUNE)
+            .prefetch(batch_size)
+            .shuffle(10000)
+            .repeat()
+            .map(lambda serialized: process_dataset_image(serialized, is_training=True),
+                 num_parallel_calls=tf.data.experimental.AUTOTUNE)
+            .batch(batch_size, drop_remainder=True)
+            .prefetch(tf.data.experimental.AUTOTUNE))
 
 def create_imagenet_test_dataset(dataset_dir, batch_size, evaluation=False):
     filenames = [os.path.join(dataset_dir, 'validation-{:05d}-of-00128'.format(i))
                  for i in range(128)]
-    dataset = tf.data.Dataset.from_tensor_slices(filenames)
-    dataset = dataset.interleave(
-        tf.data.TFRecordDataset,
-        cycle_length=10,
-        num_parallel_calls=tf.data.experimental.AUTOTUNE)
-
-    dataset = dataset.prefetch(batch_size)
-    dataset = dataset.repeat(1 if evaluation else -1)
-    dataset = dataset.map(
-        lambda serialized: process_dataset_image(serialized, is_training=False),
-        num_parallel_calls=tf.data.experimental.AUTOTUNE)
-    dataset = dataset.batch(batch_size, drop_remainder=True)
-    dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
-
-    return dataset
+    return (tf.data.Dataset
+            .from_tensor_slices(filenames)
+            .interleave(tf.data.TFRecordDataset,
+                        cycle_length=10,
+                        num_parallel_calls=tf.data.experimental.AUTOTUNE)
+            .prefetch(batch_size)
+            .repeat(1 if evaluation else -1)
+            .map(lambda serialized: process_dataset_image(serialized, is_training=False),
+                 num_parallel_calls=tf.data.experimental.AUTOTUNE)
+            .batch(batch_size, drop_remainder=True)
+            .prefetch(tf.data.experimental.AUTOTUNE))
