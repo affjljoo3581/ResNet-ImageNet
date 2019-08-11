@@ -88,7 +88,7 @@ def create_imagenet_train_dataset(dataset_dir, batch_size):
             .prefetch(tf.data.experimental.AUTOTUNE))
 
 def create_imagenet_test_dataset(dataset_dir, batch_size, evaluation=False):
-    filenames = [os.path.join(dataset_dir, 'validation-{:05d}-of-00128'.format(i))
+    filenames = [os.path.join(dataset_dir, 'validation/validation-{:05d}-of-00128'.format(i))
                  for i in range(128)]
     return (tf.data.Dataset
             .from_tensor_slices(filenames)
