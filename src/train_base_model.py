@@ -12,7 +12,7 @@ flags.DEFINE_string('dataset_dir', 'gs://my-dl-dataset/imagenet', 'ImageNet data
 flags.DEFINE_integer('classes', 1000, 'number of ImageNet dataset classes')
 
 flags.DEFINE_string('model_path', '../result/base', 'path of model weights to save or restore')
-flags.DEFINE_string('log_path', 'gs://my-dl-dataset/imagenet', 'ImageNet dataset path')
+flags.DEFINE_string('log_path', '../train_base_model.log', 'ImageNet dataset path')
 
 flags.DEFINE_integer('train_batch_size', 32, 'train batch size')
 flags.DEFINE_integer('test_batch_size', 256, 'test and evaluation batch size')
