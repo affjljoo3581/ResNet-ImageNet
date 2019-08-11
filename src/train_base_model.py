@@ -1,8 +1,8 @@
 from absl import flags, app
 
 import tensorflow as tf
-import optimization
-import modeling
+import models
+import utils
 import os
 
 
@@ -30,11 +30,11 @@ flags.DEFINE_integer('save_iters', 5000, 'number of iterations to save model wei
 
 
 def main(argv):
-    model_fn = lambda x, is_training: modeling.ResNet50(x, FLAGS.classes, is_training)
+    model_fn = lambda x, is_training: models.ResNet50(x, FLAGS.classes, is_training)
 
-    optimization.train(FLAGS, model_fn)
+    utils.train(FLAGS, model_fn)
     tf.reset_default_graph()
-    metrics = optimization.evaluate(FLAGS, model_fn)
+    metrics = utils.evaluate(FLAGS, model_fn)
 
     with open(FLAGS.log_path, 'a') as fp:
         fp.write(str(metrics))
