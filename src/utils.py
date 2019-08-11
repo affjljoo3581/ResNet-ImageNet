@@ -99,7 +99,7 @@ def create_test_ops(FLAGS, model_fn, evaluation=False):
     features, labels = iterator.get_next()
 
     # do not use the half-precision for precise evaluation
-    logits = model_fn(features, is_training=True)
+    logits = model_fn(features, is_training=False)
 
     # calculate the loss and accuracy metrics
     loss_op = ops.softmax_loss(logits, labels)
