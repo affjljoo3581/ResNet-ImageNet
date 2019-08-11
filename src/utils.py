@@ -106,7 +106,7 @@ def create_test_ops(FLAGS, model_fn, evaluation=False):
     accuracy_1_op = ops.accuracy(logits, labels, top_k=1)
     accuracy_5_op = ops.accuracy(logits, labels, top_k=5)
 
-    return loss_op, {'loss': loss_op, 'top-1 accuracy': accuracy_1_op, 'top-5 accuracy': accuracy_5_op}
+    return {'loss': loss_op, 'top-1 accuracy': accuracy_1_op, 'top-5 accuracy': accuracy_5_op}
 
 def train(FLAGS, model_fn, only_weights=False):
     train_ops = create_train_ops(FLAGS, model_fn)
