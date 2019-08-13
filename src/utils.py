@@ -76,8 +76,8 @@ def create_train_ops(FLAGS, model_fn):
 
     with tf.variable_scope('optimization'):
         global_step = tf.train.get_or_create_global_step()
-        learning_rate = tf.train.cosine_decay(FLAGS.max_lr, global_step, FLAGS.total_iters, FLAGS.min_lr / FLAGS.max_lr)
-
+        learning_rate = ops.cyclic_learning_rate(global_step, FLAGS.total_iters, FLAGS.max_lr, FLAGS.min_lr)
+        
         optimizer = tf.train.MomentumOptimizer(learning_rate, FLAGS.momentum)
         with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
             if FLAGS.use_fp16:
@@ -90,7 +90,7 @@ def create_train_ops(FLAGS, model_fn):
             # apply gradients to each variables
             train_op = optimizer.apply_gradients(grad_and_vars, global_step)
 
-    return train_op, {'loss': loss_op, 'top-1 accuracy': accuracy_1_op, 'top-5 accuracy': accuracy_5_op}
+    return train_op, {'loss': loss_op, 'top-1-accuracy': accuracy_1_op, 'top-5-accuracy': accuracy_5_op}
 
 def create_test_ops(FLAGS, model_fn, evaluation=False):
     iterator = (dataset
@@ -106,7 +106,7 @@ def create_test_ops(FLAGS, model_fn, evaluation=False):
     accuracy_1_op = ops.accuracy(logits, labels, top_k=1)
     accuracy_5_op = ops.accuracy(logits, labels, top_k=5)
 
-    return {'loss': loss_op, 'top-1 accuracy': accuracy_1_op, 'top-5 accuracy': accuracy_5_op}
+    return {'loss': loss_op, 'top-1-accuracy': accuracy_1_op, 'top-5-accuracy': accuracy_5_op}
 
 def train(FLAGS, model_fn, only_weights=False):
     train_ops = create_train_ops(FLAGS, model_fn)
@@ -120,7 +120,7 @@ def train(FLAGS, model_fn, only_weights=False):
         # restore weights if there is a checkpoint file
         latest_ckpt = tf.train.latest_checkpoint(FLAGS.model_path)
         if latest_ckpt:
-            var_list = [v for v in tf.trainable_variables() if not v.name.startswith('optimization')]
+            var_list = [v for v in tf.global_variables() if not v.name.startswith('optimization')]
             tf.train.Saver(var_list if only_weights else None).restore(sess, latest_ckpt)
 
         logger = Logger(FLAGS.log_path)
@@ -141,7 +141,7 @@ def train(FLAGS, model_fn, only_weights=False):
         logger.close()
         if os.path.exists(FLAGS.model_path): shutil.rmtree(FLAGS.model_path)
 
-        var_list = [v for v in tf.trainable_variables() if not v.name.startswith('optimization')]
+        var_list = [v for v in tf.global_variables() if not v.name.startswith('optimization')]
         tf.train.Saver(var_list).save(sess, os.path.join(FLAGS.model_path, 'model.ckpt'))
 
 def evaluate(FLAGS, model_fn):

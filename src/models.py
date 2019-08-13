@@ -30,7 +30,7 @@ def resblock(x, out_channels, layers=3, stride=1, is_training=True, name=None):
 
     return x
 
-def ResNet50(x, classes, is_training):
+def ResNet152(x, classes, is_training):
     with tf.variable_scope('ResNet50'):
         with tf.variable_scope('stage_input'):
             x = ops.conv(x, 64, 7, 2, name='conv_1')
@@ -38,7 +38,7 @@ def ResNet50(x, classes, is_training):
 
         x = resblock(x, 256, 3, 1, is_training, name='stage_1')
         x = resblock(x, 512, 4, 2, is_training, name='stage_2')
-        x = resblock(x, 1024, 6, 2, is_training, name='stage_3')
+        x = resblock(x, 1024, 36, 2, is_training, name='stage_3')
         x = resblock(x, 2048, 3, 2, is_training, name='stage_4')
 
         with tf.variable_scope('stage_output'):
