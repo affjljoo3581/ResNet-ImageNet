@@ -71,9 +71,9 @@ def cyclic_learning_rate(global_step, total_steps, max_lr, min_lr):
     cyclic_steps = int(total_steps * 0.4)
     cooling_steps = total_steps - 2 * cyclic_steps
     
-    increasing = (max_lr - min_lr) / cyclic_steps * global_steps + min_lr
-    decreasing = (min_lr - max_lr) / cyclic_steps * (global_steps - cyclic_steps) + max_lr
-    cooldown = min_lr / cooling_steps * (global_steps - total_steps)
+    increasing = (max_lr - min_lr) / cyclic_steps * global_step + min_lr
+    decreasing = (min_lr - max_lr) / cyclic_steps * (global_step - cyclic_steps) + max_lr
+    cooldown = min_lr / cooling_steps * (global_step - total_steps)
     
     return tf.case({(global_step < cyclic_steps): lambda: increasing,
                     (global_step < 2 * cyclic_steps): lambda: decreasing},
