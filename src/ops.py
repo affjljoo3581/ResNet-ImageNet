@@ -68,6 +68,7 @@ def accuracy(x, y, top_k=1):
     return tf.reduce_mean(tf.cast(tf.nn.in_top_k(x, y, top_k), tf.float32))
 
 def cyclic_learning_rate(global_step, total_steps, max_lr, min_lr):
+    global_step = tf.cast(global_step, tf.float32)
     cyclic_steps = int(total_steps * 0.4)
     cooling_steps = total_steps - 2 * cyclic_steps
     
