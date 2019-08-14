@@ -78,14 +78,14 @@ def create_imagenet_train_dataset(dataset_dir, batch_size):
             .shuffle(1024)
             .interleave(tf.data.TFRecordDataset,
                         cycle_length=10,
-                        num_parallel_calls=tf.data.experimental.AUTOTUNE)
+                        num_parallel_calls=os.cpu_count())
             .prefetch(batch_size)
             .shuffle(10000)
             .repeat()
             .map(lambda serialized: process_dataset_image(serialized, is_training=True),
-                 num_parallel_calls=tf.data.experimental.AUTOTUNE)
+                 num_parallel_calls=os.cpu_count())
             .batch(batch_size, drop_remainder=True)
-            .prefetch(tf.data.experimental.AUTOTUNE))
+            .prefetch(2))
 
 def create_imagenet_test_dataset(dataset_dir, batch_size, evaluation=False):
     filenames = [os.path.join(dataset_dir, 'validation/validation-{:05d}-of-00128'.format(i))
@@ -94,10 +94,10 @@ def create_imagenet_test_dataset(dataset_dir, batch_size, evaluation=False):
             .from_tensor_slices(filenames)
             .interleave(tf.data.TFRecordDataset,
                         cycle_length=10,
-                        num_parallel_calls=tf.data.experimental.AUTOTUNE)
+                        num_parallel_calls=os.cpu_count())
             .prefetch(batch_size)
             .repeat(1 if evaluation else -1)
             .map(lambda serialized: process_dataset_image(serialized, is_training=False),
-                 num_parallel_calls=tf.data.experimental.AUTOTUNE)
+                 num_parallel_calls=os.cpu_count())
             .batch(batch_size, drop_remainder=True)
-            .prefetch(tf.data.experimental.AUTOTUNE))
+            .prefetch(2))
