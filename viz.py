@@ -28,20 +28,13 @@ for line in data:
             test_metrics[key] = []
         test_metrics[key].append(float(value))
 
-last = 0
-for i in range(len(steps) - 1):
-    d = steps[i] - steps[i - 1]
-    if d != last:
-        last = d
-        print(d)
-'''
+
 plt.subplot(211)
 plt.plot(steps, train_metrics['loss'])
 plt.plot(steps, test_metrics['loss'])
 
 plt.subplot(212)
-plt.plot(steps, train_metrics['top-1 accuracy'])
-plt.plot(steps, test_metrics['top-1 accuracy'])
+plt.plot(steps, train_metrics['top-1-accuracy'])
+plt.plot(steps, test_metrics['top-1-accuracy'])
 
 plt.show()
-'''      
